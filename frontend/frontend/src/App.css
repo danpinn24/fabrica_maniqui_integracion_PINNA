@@ -186,3 +186,43 @@
   transition: background-color 0.2s;
 }
 .btn-eliminar:hover { background-color: #dc2626; }
+
+
+/* --- ESTILOS PARA EL CONFIGURADOR DE ARMADO DE MANIQUÍES --- */
+
+.formulario-armado {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.grilla-formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.subtitulo-seccion {
+  margin: 10px 0 5px 0;
+  color: #475569;
+}
+
+.grilla-piezas-select {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.label-formulario {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #475569;
+}
+
+.btn-registrar-contenedor {
+  margin-top: 10px;
+  align-self: flex-end;
+}
