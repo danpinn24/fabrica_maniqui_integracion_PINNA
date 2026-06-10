@@ -18,9 +18,13 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
   const armarNuevoManiqui = (e) => {
     e.preventDefault();
 
-    // Guardamos obligatoriamente todos los IDs convirtiéndolos a enteros
     const piezasIds = [cabezaSel, torsoSel, brazoDerSel, brazoIzqSel, piernaDerSel, piernaIzqSel]
       .map(id => parseInt(id));
+
+    if (piezasIds.some(id => isNaN(id))) {
+      alert("Por favor, selecciona las 6 piezas reglamentarias para armar el maniquí.");
+      return;
+    }
 
     const ordenArmado = {
       gama,
@@ -39,7 +43,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
         return res.json();
       })
       .then(data => {
-        // Actualizamos los estados globales que vienen por props
+        // Actualizamos los estados globales compartidos
         setManiquies([...maniquies, data.maniqui]);
         setPiezas(data.piezasActualizadas);
         
@@ -67,7 +71,9 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
           return res.json();
         })
         .then(data => {
-          setManiquies(data.maniquiesActualizados);
+          // Filtramos el maniquí eliminado en el front para actualizar la grilla al instante
+          setManiquies(maniquies.filter(m => m.id !== id));
+          // Seteamos las piezas libres que recalculó el backend
           setPiezas(data.piezasActualizadas);
           alert(data.mensaje);
         })
@@ -77,7 +83,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
 
   return (
     <div className="dinamico-contenedor">
-      {/* Formulario Obligatorio de Armado */}
+      {/* Formulario Obligatorio de Armado Original */}
       <div className="tarjeta-blanca">
         <h3>🛠️ Armar y Registrar Nuevo Maniquí</h3>
         <form onSubmit={armarNuevoManiqui} className="formulario-armado">
@@ -118,7 +124,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
                 <option value="" disabled hidden>Seleccione Cabeza...</option>
                 {piezas.filter(p => p.tipo === 'Cabeza' && p.disponible !== false).map(p => (
                   <option key={p.id} value={p.id}>
-                    ID: {p.id} ({p.material} — {p.color} — {p.sexo || 'Abstracto'} — Ojos: {p.ojos || 'Marrón'})
+                    ID: {p.id} ({p.material || 'Plástico'} — {p.color} — {p.sexo || 'Abstracto'} — Ojos: {p.ojos || 'Marrón'})
                   </option>
                 ))}
               </select>
@@ -131,7 +137,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
                 <option value="" disabled hidden>Seleccione Torso...</option>
                 {piezas.filter(p => p.tipo === 'Torso' && p.disponible !== false).map(p => (
                   <option key={p.id} value={p.id}>
-                    ID: {p.id} ({p.material} — Talle: {p.tamano} — {p.color})
+                    ID: {p.id} ({p.material || 'Plástico'} — Talle: {p.tamano} — {p.color})
                   </option>
                 ))}
               </select>
@@ -144,7 +150,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
                 <option value="" disabled hidden>Seleccione Brazo Der...</option>
                 {piezas.filter(p => p.tipo === 'Brazo Derecho' && p.disponible !== false).map(p => (
                   <option key={p.id} value={p.id}>
-                    ID: {p.id} ({p.material} — Talle: {p.tamano} — {p.color})
+                    ID: {p.id} ({p.material || 'Plástico'} — Talle: {p.tamano} — {p.color})
                   </option>
                 ))}
               </select>
@@ -157,7 +163,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
                 <option value="" disabled hidden>Seleccione Brazo Izq...</option>
                 {piezas.filter(p => p.tipo === 'Brazo Izquierdo' && p.disponible !== false).map(p => (
                   <option key={p.id} value={p.id}>
-                    ID: {p.id} ({p.material} — Talle: {p.tamano} — {p.color})
+                    ID: {p.id} ({p.material || 'Plástico'} — Talle: {p.tamano} — {p.color})
                   </option>
                 ))}
               </select>
@@ -170,7 +176,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
                 <option value="" disabled hidden>Seleccione Pierna Der...</option>
                 {piezas.filter(p => p.tipo === 'Pierna Derecha' && p.disponible !== false).map(p => (
                   <option key={p.id} value={p.id}>
-                    ID: {p.id} ({p.material} — Talle: {p.tamano} — {p.color})
+                    ID: {p.id} ({p.material || 'Plástico'} — Talle: {p.tamano} — {p.color})
                   </option>
                 ))}
               </select>
@@ -183,7 +189,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
                 <option value="" disabled hidden>Seleccione Pierna Izq...</option>
                 {piezas.filter(p => p.tipo === 'Pierna Izquierda' && p.disponible !== false).map(p => (
                   <option key={p.id} value={p.id}>
-                    ID: {p.id} ({p.material} — Talle: {p.tamano} — {p.color})
+                    ID: {p.id} ({p.material || 'Plástico'} — Talle: {p.tamano} — {p.color})
                   </option>
                 ))}
               </select>
@@ -197,7 +203,7 @@ function ComponenteManiquies({ maniquies, piezas, setManiquies, setPiezas }) {
         </form>
       </div>
 
-      {/* Showroom / Lista de Maniquíes */}
+      {/* Showroom / Lista de Maniquíes Original */}
       <h3 style={{ marginTop: '24px', color: '#1e293b' }}>Maniquíes en Showroom ({maniquies.length})</h3>
       <div className="grilla-cards">
         {maniquies.map(m => (
