@@ -8,8 +8,8 @@ app.use(cors());
 app.use(express.json());
 
 
-const rutasManiquies = require('./routes/maniquies');
-const rutasPiezas = require('./routes/piezas');
+const rutasManiquies = require('./routes/maniquies').default;
+const rutasPiezas = require('./routes/piezas').default;
 
 app.use('/api/maniquies', rutasManiquies);
 app.use('/api/piezas', rutasPiezas);
