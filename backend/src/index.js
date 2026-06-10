@@ -1,15 +1,15 @@
-const express = require('express');
-const cors = require('cors');
+import express, { json } from 'express';
+import cors from 'cors';
 
 const app = express();
 const PORT = 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(json());
 
 
-const rutasManiquies = require('./routes/maniquies').default;
-const rutasPiezas = require('./routes/piezas').default;
+import rutasManiquies from './routes/maniquies.js';
+import rutasPiezas from './routes/piezas.js';
 
 app.use('/api/maniquies', rutasManiquies);
 app.use('/api/piezas', rutasPiezas);

@@ -1,12 +1,12 @@
 import { Router } from 'express';
 const router = Router();
-import { query } from '../db'; // Pool compartido (Singleton)
-import { obtenerPiezasConDisponibilidad } from './piezas'; // Necesitamos su función de disponibilidad
+
+import  pool  from '../db.js'; 
 
 // 1. LISTAR TODOS LOS MANIQUÍES EXISTENTES
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await query('SELECT * FROM maniqui');
+        const [rows] = await pool.query('SELECT * FROM maniqui');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -24,7 +24,7 @@ router.post('/armar', async (req, res) => {
     try {
         const fecha = new Date().toISOString().split('T')[0];
 
-        const [maniquiResult] = await query(
+        const [maniquiResult] = await pool.query(
             'INSERT INTO maniqui (fecha_fabricacion, gama, tamano, precio, id_deposito) VALUES (?, ?, ?, ?, ?)',
             [fecha, gama, tamano || 'Adulto', parseFloat(precio), 1]
         );
@@ -32,14 +32,14 @@ router.post('/armar', async (req, res) => {
 
         for (const idPieza of piezasIds) {
             if (idPieza) {
-                await query(
+                await pool.query(
                     'INSERT INTO ensamblaje (id_maniqui, id_pieza_fisica) VALUES (?, ?)',
                     [nuevoManiquiId, idPieza]
                 );
             }
         }
 
-
+        // Recalculamos el stock usando la función compartida
         const piezasActualizadas = await obtenerPiezasConDisponibilidad();
 
         res.status(201).json({
@@ -62,8 +62,8 @@ router.post('/armar', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        await query('DELETE FROM ensamblaje WHERE id_maniqui = ?', [id]);
-        await query('DELETE FROM maniqui WHERE id = ?', [id]);
+        await pool.query('DELETE FROM ensamblaje WHERE id_maniqui = ?', [id]);
+        await pool.query('DELETE FROM maniqui WHERE id = ?', [id]);
 
         const piezasActualizadas = await obtenerPiezasConDisponibilidad();
 
@@ -76,4 +76,5 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// 🟢 EXPORTACIÓN CORRECTA PARA NODE.JS:
 export default router;

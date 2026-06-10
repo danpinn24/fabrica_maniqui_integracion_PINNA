@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const router = Router();
-import { query } from '../db';
+import pool from '../db.js';
 
 // Función auxiliar original para traer disponibilidad de piezas
 async function obtenerPiezasConDisponibilidad() {
