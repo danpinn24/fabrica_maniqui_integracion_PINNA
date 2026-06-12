@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Modal from './components/Modal';
 
 function ComponentePiezas({ piezas, setPiezas }) {
   // --- ESTADOS LOCALES DEL CONFIGURADOR DE COMPONENTES ---
@@ -8,6 +9,24 @@ function ComponentePiezas({ piezas, setPiezas }) {
   const [material, setMaterial] = useState('Plástico');
   const [sexo, setSexo] = useState('Mujer');
   const [ojos, setOjos] = useState('Marrón');
+
+const [modal, setModal] = useState({
+  open: false,
+  title: '',
+  message: '',
+  confirm: false,
+  action: null
+});
+
+const showAlert = (title, message) => {
+  setModal({
+    open: true,
+    title,
+    message,
+    confirm: false,
+    action: null
+  });
+};
 
   // --- ACCIÓN: FABRICAR PIEZA ---
   const guardarPieza = (e) => {
@@ -22,7 +41,10 @@ function ComponentePiezas({ piezas, setPiezas }) {
       .then(res => res.json())
       .then(data => {
         setPiezas([...piezas, data]);
-        alert("¡Componente fabricado y guardado en depósito!");
+        showAlert(
+  "Pieza registrada",
+  "¡Componente fabricado y guardado en depósito!"
+);
       });
   };
 
@@ -149,6 +171,20 @@ function ComponentePiezas({ piezas, setPiezas }) {
           </div>
         ))}
       </div>
+
+      <Modal
+        open={modal.open}
+        title={modal.title}
+        message={modal.message}
+        confirm={modal.confirm}
+        onClose={() =>
+          setModal(prev => ({
+            ...prev,
+            open: false
+          }))
+        }
+        onAccept={modal.action}
+      />
     </div>
   );
 }
