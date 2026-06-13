@@ -1,7 +1,11 @@
 import { Router } from 'express';
 const router = Router();
 
-import  pool  from '../db.js'; 
+import pool from '../db.js'; 
+import rutasPiezas from './piezas.js'; 
+
+// Importamos la función desde el router de piezas para refrescar la disponibilidad en tiempo real
+const obtenerPiezasConDisponibilidad = rutasPiezas.obtenerPiezasConDisponibilidad;
 
 // 1. LISTAR TODOS LOS MANIQUÍES EXISTENTES
 router.get('/', async (req, res) => {
@@ -24,12 +28,14 @@ router.post('/armar', async (req, res) => {
     try {
         const fecha = new Date().toISOString().split('T')[0];
 
+        // Insertar cabecera del Maniquí
         const [maniquiResult] = await pool.query(
             'INSERT INTO maniqui (fecha_fabricacion, gama, tamano, precio, id_deposito) VALUES (?, ?, ?, ?, ?)',
             [fecha, gama, tamano || 'Adulto', parseFloat(precio), 1]
         );
         const nuevoManiquiId = maniquiResult.insertId;
 
+        // Registrar cada una de las 6 piezas en la tabla relacional de ensamblaje
         for (const idPieza of piezasIds) {
             if (idPieza) {
                 await pool.query(
@@ -39,7 +45,7 @@ router.post('/armar', async (req, res) => {
             }
         }
 
-        // Recalculamos el stock usando la función compartida
+        // Recalculamos el stock usando la función del archivo piezas.js
         const piezasActualizadas = await obtenerPiezasConDisponibilidad();
 
         res.status(201).json({
@@ -62,6 +68,7 @@ router.post('/armar', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
+        // Rompemos las relaciones de ensamblaje primero para liberar las piezas físicas
         await pool.query('DELETE FROM ensamblaje WHERE id_maniqui = ?', [id]);
         await pool.query('DELETE FROM maniqui WHERE id = ?', [id]);
 
@@ -72,9 +79,8 @@ router.delete('/:id', async (req, res) => {
             piezasActualizadas: piezasActualizadas
         });
     } catch (error) {
-        res.status(500).json({ error: 'Error en MySQL al desarmar: ' + error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
-// 🟢 EXPORTACIÓN CORRECTA PARA NODE.JS:
 export default router;

@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+
 function Modal({
   open,
   title,
@@ -6,13 +8,14 @@ function Modal({
   onAccept,
   confirm = false
 }) {
+  // Si no está abierto, no renderiza nada
   if (!open) return null;
 
-  return (
+  // Creamos el HTML del modal
+  const contenidoModal = (
     <div className="modal-overlay">
       <div className="modal">
         <h3>{title}</h3>
-
         <p>{message}</p>
 
         <div className="modal-buttons">
@@ -34,6 +37,9 @@ function Modal({
       </div>
     </div>
   );
+
+  // createPortal inyecta este fragmento directamente al final del body
+  return createPortal(contenidoModal, document.body);
 }
 
 export default Modal;

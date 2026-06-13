@@ -1,8 +1,8 @@
 import { Router } from 'express';
 const router = Router();
-import pool from '../db.js';
+import pool from '../db.js'; // Asegúrate de que la ruta a db.js sea la correcta desde tu carpeta de rutas
 
-// Función auxiliar original para traer disponibilidad de piezas
+// Función auxiliar original corregida usando pool.query
 async function obtenerPiezasConDisponibilidad() {
     const querySQL = `
     SELECT 
@@ -15,7 +15,8 @@ async function obtenerPiezasConDisponibilidad() {
     LEFT JOIN ensamblaje e ON pf.id = e.id_pieza_fisica
     ORDER BY pf.id DESC
   `;
-    const [rows] = await query(querySQL);
+    // CORRECCIÓN: Usar pool.query en lugar de query a secas
+    const [rows] = await pool.query(querySQL);
     return rows.map(pieza => ({
         ...pieza,
         disponible: pieza.disponible_num === 1
@@ -41,14 +42,16 @@ router.post('/', async (req, res) => {
         let idCabezaDetalle = null;
 
         if (datos.tipo === 'Cabeza') {
-            const [cabezaRes] = await query(
+            // CORRECCIÓN: pool.query
+            const [cabezaRes] = await pool.query(
                 'INSERT INTO detalle_cabeza (tipo_ojo, tipo_cabello) VALUES (?, ?)',
                 [datos.ojos || 'Marrón', 'Sintético']
             );
             idCabezaDetalle = cabezaRes.insertId;
         }
 
-        const [modeloExiste] = await query(
+        // CORRECCIÓN: pool.query
+        const [modeloExiste] = await pool.query(
             'SELECT id FROM modelo_pieza WHERE tipo = ? AND color = ? AND sexo = ? AND tamano = ?',
             [datos.tipo, datos.color || 'Blanco', datos.sexo || null, datos.tamano || 'M']
         );
@@ -57,14 +60,16 @@ router.post('/', async (req, res) => {
         if (modeloExiste.length > 0) {
             idModelo = modeloExiste[0].id;
         } else {
-            const [nuevoModelo] = await query(
+            // CORRECCIÓN: pool.query
+            const [nuevoModelo] = await pool.query(
                 'INSERT INTO modelo_pieza (tipo, color, sexo, tamano, id_material, id_cabeza) VALUES (?, ?, ?, ?, ?, ?)',
                 [datos.tipo, datos.color || 'Blanco', datos.sexo || null, datos.tamano || 'M', 1, idCabezaDetalle]
             );
             idModelo = nuevoModelo.insertId;
         }
 
-        const [piezaFisicaRes] = await query(
+        // CORRECCIÓN: pool.query
+        const [piezaFisicaRes] = await pool.query(
             'INSERT INTO pieza_fisica (fecha_fabricacion, estado, id_modelo) VALUES (?, ?, ?)',
             [fecha, 'Nueva', idModelo]
         );
@@ -91,14 +96,28 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        await query('DELETE FROM ensamblaje WHERE id_pieza_fisica = ?', [id]);
-        await query('DELETE FROM pieza_fisica WHERE id = ?', [id]);
-        res.json({ mensaje: 'Pieza eliminada correctamente.' });
+        // 1. VERIFICACIÓN DE SEGURIDAD: Comprobar si la pieza está siendo usada en un maniquí
+        const [enUso] = await pool.query(
+            'SELECT id_maniqui FROM ensamblaje WHERE id_pieza_fisica = ?', 
+            [id]
+        );
+
+        if (enUso.length > 0) {
+            // Si la consulta trae filas, significa que la pieza está ensamblada en un maniquí
+            return res.status(400).json({ 
+                error: `No se puede eliminar la pieza ID ${id} porque actualmente está asignada al Maniquí ID ${enUso[0].id_maniqui}. Primero debes desarmar ese maniquí.` 
+            });
+        }
+
+        // 2. Si no está en uso, procedemos a borrarla de forma segura
+        await pool.query('DELETE FROM pieza_fisica WHERE id = ?', [id]);
+        
+        res.json({ mensaje: 'Pieza eliminada correctamente del depósito.' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Error al intentar eliminar la pieza: ' + error.message });
     }
 });
 
-// Exportamos la función auxiliar por si maniquies.js la necesita reusar
+// Exportamos la función auxiliar
 router.obtenerPiezasConDisponibilidad = obtenerPiezasConDisponibilidad;
 export default router;

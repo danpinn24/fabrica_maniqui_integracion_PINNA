@@ -13,9 +13,25 @@ function App() {
 
   // --- CARGA INICIAL DESDE EL BACKEND ---
   useEffect(() => {
-    fetch('http://localhost:3001/api/maniquies').then(res => res.json()).then(setManiquies);
-    fetch('http://localhost:3001/api/piezas').then(res => res.json()).then(setPiezas);
-  }, []);
+  fetch('http://localhost:3001/api/maniquies')
+    .then(res => {
+      if (!res.ok) throw new Error("Error cargando maniquíes");
+      return res.json();
+    })
+    .then(data => setManiquies(Array.isArray(data) ? data : []))
+    .catch(err => console.error(err));
+
+  fetch('http://localhost:3001/api/piezas')
+    .then(res => {
+      if (!res.ok) throw new Error("Error cargando piezas");
+      return res.json();
+    })
+    .then(data => setPiezas(Array.isArray(data) ? data : []))
+    .catch(err => {
+      console.error(err);
+      setPiezas([]); // Forzamos un array vacío ante fallas del backend
+    });
+}, []);
 
   return (
     <div className="panel-contenedor">
